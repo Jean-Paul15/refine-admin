@@ -9,7 +9,7 @@ import {
 import { BaseRecord } from "@refinedev/core";
 import { Space, Table, Button, Tag, Typography } from "antd";
 import { DownloadOutlined, DollarOutlined, UserOutlined } from "@ant-design/icons";
-import { useExport } from "../../hooks/useExport";
+import { useExportSecure } from "../../hooks/useExportSecure";
 import dayjs from "dayjs";
 
 const { Text } = Typography;
@@ -23,7 +23,7 @@ export default function DonsEngagementsList() {
         },
     });
 
-    const { exportToExcel, exportToCSV } = useExport();
+    const { exportToExcel, exportToCSV, loading } = useExportSecure();
 
     // Fonction pour exporter en Excel
     const handleExportExcel = async () => {

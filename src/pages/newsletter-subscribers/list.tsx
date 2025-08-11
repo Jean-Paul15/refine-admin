@@ -10,7 +10,7 @@ import {
 import { BaseRecord } from "@refinedev/core";
 import { Space, Table, Button } from "antd";
 import { DownloadOutlined, FileExcelOutlined } from "@ant-design/icons";
-import { useExport } from "../../hooks/useExport";
+import { useExportSecure } from "../../hooks/useExportSecure";
 import dayjs from "dayjs";
 
 export const NewsletterSubscriberList = () => {
@@ -18,7 +18,7 @@ export const NewsletterSubscriberList = () => {
         syncWithLocation: true,
     });
 
-    const { exportToExcel, exportToCSV, loading } = useExport();
+    const { exportToExcel, exportToCSV, loading } = useExportSecure();
 
     // Fonction pour préparer les données d'export
     const prepareExportData = (records: readonly BaseRecord[]) => {

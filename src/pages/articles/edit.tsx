@@ -7,7 +7,17 @@ import { supabaseClient } from "../../utility";
 import SafeDatePicker from "../../components/SafeDatePicker";
 
 export const ArticleEdit = () => {
-    const { formProps, saveButtonProps, queryResult } = useForm();
+    const { formProps, saveButtonProps, queryResult } = useForm({
+        onMutationSuccess: () => {
+            message.success('Article mis à jour avec succès !');
+        },
+        onMutationError: (error) => {
+            console.error('Erreur lors de la mise à jour:', error);
+            message.error('Erreur lors de la mise à jour de l\'article');
+        },
+        // Transformer les données avant soumission
+        redirect: false,
+    });
     const [imageUrl, setImageUrl] = useState<string>("");
     const [imageUploading, setImageUploading] = useState(false);
     const [currentImagePath, setCurrentImagePath] = useState<string>("");
@@ -18,19 +28,32 @@ export const ArticleEdit = () => {
         optionValue: (item: any) => item.id,
     });
 
-    // Charger l'image existante
+    // Charger l'image existante et initialiser les valeurs du formulaire
     useEffect(() => {
-        if (queryResult?.data?.data?.image_url) {
-            const imageUrl = queryResult.data.data.image_url;
-            setImageUrl(imageUrl);
+        if (queryResult?.data?.data) {
+            const articleData = queryResult.data.data;
 
-            // Extraire le chemin de l'image pour pouvoir la supprimer plus tard
-            const urlParts = imageUrl.split('/uploads/');
-            if (urlParts.length > 1) {
-                setCurrentImagePath(`uploads/${urlParts[1]}`);
+            // Gérer l'image
+            if (articleData.image_url) {
+                const imageUrl = articleData.image_url;
+                setImageUrl(imageUrl);
+
+                // Extraire le chemin de l'image pour pouvoir la supprimer plus tard
+                const urlParts = imageUrl.split('/uploads/');
+                if (urlParts.length > 1) {
+                    setCurrentImagePath(`uploads/${urlParts[1]}`);
+                }
             }
+
+            // Initialiser les valeurs du formulaire avec gestion de la date
+            const formValues = {
+                ...articleData,
+                published_date: articleData.published_date ? new Date(articleData.published_date) : new Date(), // Valeur par défaut si pas de date
+            };
+
+            formProps.form?.setFieldsValue(formValues);
         }
-    }, [queryResult?.data?.data?.image_url]);
+    }, [queryResult?.data?.data, formProps.form]);
 
     // Fonction pour supprimer l'ancienne image
     const deleteOldImage = async (imagePath: string) => {
@@ -253,8 +276,8 @@ export const ArticleEdit = () => {
 
                 <Form.Item
                     label="Date de publication"
-                    name={["published_at"]}
-                    help="Laissez vide pour publier immédiatement"
+                    name={["published_date"]}
+                    help="Laissez vide pour utiliser la date actuelle"
                 >
                     <SafeDatePicker
                         showTime

@@ -31,6 +31,7 @@ import { BrowserRouter, Outlet, Route, Routes } from "react-router";
 import authProvider from "./authProvider";
 import { Header } from "./components/header";
 import { ColorModeContextProvider } from "./contexts/color-mode";
+import { frTranslations } from "./locales/fr";
 import { DashboardPage } from "./pages/dashboard";
 import {
   ProfileCreate,

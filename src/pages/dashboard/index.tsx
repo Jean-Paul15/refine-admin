@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Card, Col, Row, Statistic, Typography, Progress, Alert, Space, Button } from "antd";
+import { Card, Col, Row, Statistic, Typography, Progress, Alert, Space, Button, theme } from "antd";
 import {
     UserOutlined,
     FileTextOutlined,
@@ -15,10 +15,12 @@ import {
     DollarOutlined
 } from "@ant-design/icons";
 import { supabaseClient } from "../../utility";
+import "../../styles/dashboard.css";
 
 const { Title, Text, Paragraph } = Typography;
 
 export const DashboardPage = () => {
+    const { token } = theme.useToken();
     const [stats, setStats] = useState({
         profilesCount: 0,
         articlesCount: 0,
@@ -151,59 +153,62 @@ export const DashboardPage = () => {
             </Row>
 
             {/* Section Dons et Engagements */}
-            <Title level={2} style={{ marginBottom: "24px", color: "#722ed1" }}>Dons et Engagements</Title>
+            <Title level={2} style={{ marginBottom: "24px", color: token.colorPrimary }}>Dons et Engagements</Title>
 
             <Row gutter={[24, 24]} style={{ marginBottom: "32px" }}>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card hoverable style={{ borderRadius: "12px", border: "2px solid #ffadd6", background: "linear-gradient(135deg, #fff0f6 0%, #ffadd6 100%)" }}>
+                    <Card hoverable className="dashboard-card-notification" style={{ borderRadius: "12px" }}>
                         <Statistic
+                            className="dashboard-statistic"
                             title="Dons Ponctuels"
                             value={stats.donsCount}
-                            prefix={<HeartOutlined style={{ color: "#eb2f96" }} />}
-                            valueStyle={{ color: "#eb2f96", fontSize: "28px", fontWeight: "bold" }}
+                            prefix={<HeartOutlined style={{ color: token.colorPrimary }} />}
+                            valueStyle={{ color: token.colorPrimary, fontSize: "28px", fontWeight: "bold" }}
                         />
                         <Text type="secondary">Contributions uniques</Text>
                     </Card>
                 </Col>
 
                 <Col xs={24} sm={12} lg={6}>
-                    <Card hoverable style={{ borderRadius: "12px", border: "2px solid #b37feb", background: "linear-gradient(135deg, #f9f0ff 0%, #b37feb 100%)" }}>
+                    <Card hoverable className="dashboard-card-notification" style={{ borderRadius: "12px" }}>
                         <Statistic
+                            className="dashboard-statistic"
                             title="Engagements Réguliers"
                             value={stats.engagementsCount}
-                            prefix={<DollarOutlined style={{ color: "#722ed1" }} />}
-                            valueStyle={{ color: "#722ed1", fontSize: "28px", fontWeight: "bold" }}
+                            prefix={<DollarOutlined style={{ color: token.colorSuccess }} />}
+                            valueStyle={{ color: token.colorSuccess, fontSize: "28px", fontWeight: "bold" }}
                         />
                         <Text type="secondary">Soutien continu</Text>
                     </Card>
                 </Col>
 
                 <Col xs={24} sm={12} lg={6}>
-                    <Card hoverable style={{ borderRadius: "12px", border: "2px solid #52c41a", background: "linear-gradient(135deg, #f6ffed 0%, #b7eb8f 100%)" }}>
+                    <Card hoverable className="dashboard-card-notification" style={{ borderRadius: "12px" }}>
                         <Statistic
+                            className="dashboard-statistic"
                             title="Montant Total"
                             value={stats.montantTotal}
                             suffix=" XAF"
                             precision={0}
-                            valueStyle={{ color: "#389e0d", fontSize: "20px", fontWeight: "bold" }}
+                            valueStyle={{ color: token.colorSuccess, fontSize: "20px", fontWeight: "bold" }}
                         />
                         <Text type="secondary">Contributions reçues</Text>
                     </Card>
                 </Col>
 
                 <Col xs={24} sm={12} lg={6}>
-                    <Card hoverable style={{
+                    <Card hoverable className="dashboard-card-notification" style={{
                         borderRadius: "12px",
-                        border: stats.nouveauxFormulaires > 0 ? "2px solid #ff4d4f" : "1px solid #d9d9d9",
-                        background: stats.nouveauxFormulaires > 0 ? "linear-gradient(135deg, #fff2f0 0%, #ffccc7 100%)" : "white",
+                        border: stats.nouveauxFormulaires > 0 ? `2px solid ${token.colorError}` : `1px solid ${token.colorBorder}`,
                         animation: stats.nouveauxFormulaires > 0 ? "pulse 2s infinite" : "none"
                     }}>
                         <Statistic
+                            className="dashboard-statistic"
                             title="Nouveaux Formulaires"
                             value={stats.nouveauxFormulaires}
-                            prefix={<HeartOutlined style={{ color: stats.nouveauxFormulaires > 0 ? "#ff4d4f" : "#d9d9d9" }} />}
+                            prefix={<HeartOutlined style={{ color: stats.nouveauxFormulaires > 0 ? token.colorError : token.colorTextDisabled }} />}
                             valueStyle={{
-                                color: stats.nouveauxFormulaires > 0 ? "#ff4d4f" : "#d9d9d9",
+                                color: stats.nouveauxFormulaires > 0 ? token.colorError : token.colorTextDisabled,
                                 fontSize: "28px",
                                 fontWeight: "bold"
                             }}
@@ -233,7 +238,7 @@ export const DashboardPage = () => {
                                 />
                                 <Progress
                                     percent={Math.round((stats.publishedArticles / stats.articlesCount) * 100) || 0}
-                                    strokeColor="#52c41a"
+                                    strokeColor={token.colorSuccess}
                                     style={{ marginTop: "8px" }}
                                 />
                             </Col>
@@ -263,9 +268,9 @@ export const DashboardPage = () => {
                                 icon={<HeartOutlined />}
                                 block
                                 style={{
-                                    backgroundColor: stats.nouveauxFormulaires > 0 ? "#ff4d4f" : undefined,
-                                    color: stats.nouveauxFormulaires > 0 ? "white" : undefined,
-                                    borderColor: stats.nouveauxFormulaires > 0 ? "#ff4d4f" : undefined
+                                    backgroundColor: stats.nouveauxFormulaires > 0 ? token.colorError : undefined,
+                                    color: stats.nouveauxFormulaires > 0 ? token.colorWhite : undefined,
+                                    borderColor: stats.nouveauxFormulaires > 0 ? token.colorError : undefined
                                 }}
                                 onClick={() => window.location.href = "/dons-engagements"}
                             >
@@ -300,7 +305,7 @@ export const DashboardPage = () => {
                         onClick={() => window.location.href = "/articles"}
                     >
                         <Card.Meta
-                            avatar={<FileTextOutlined style={{ fontSize: "32px", color: "#1890ff" }} />}
+                            avatar={<FileTextOutlined style={{ fontSize: "32px", color: token.colorPrimary }} />}
                             title="Articles et Actualités"
                             description="Gérer le contenu éditorial, actualités et informations pour les résidents et familles"
                         />
@@ -317,7 +322,7 @@ export const DashboardPage = () => {
                         onClick={() => window.location.href = "/actions"}
                     >
                         <Card.Meta
-                            avatar={<ThunderboltOutlined style={{ fontSize: "32px", color: "#fa8c16" }} />}
+                            avatar={<ThunderboltOutlined style={{ fontSize: "32px", color: token.colorWarning }} />}
                             title="Activités et Événements"
                             description="Planifier et organiser les activités, sorties et événements de la maison"
                         />
@@ -334,7 +339,7 @@ export const DashboardPage = () => {
                         onClick={() => window.location.href = "/profiles"}
                     >
                         <Card.Meta
-                            avatar={<UserOutlined style={{ fontSize: "32px", color: "#52c41a" }} />}
+                            avatar={<UserOutlined style={{ fontSize: "32px", color: token.colorSuccess }} />}
                             title="Résidents et Familles"
                             description="Gérer les profils des résidents, contacts familiaux et informations personnelles"
                         />

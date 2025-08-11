@@ -13,7 +13,7 @@ import { DownloadOutlined, UploadOutlined, ExclamationCircleOutlined } from "@an
 import Papa from "papaparse";
 import { supabaseClient } from "../../utility";
 import { useState } from "react";
-import { useExport } from "../../hooks/useExport";
+import { useExportSecure } from "../../hooks/useExportSecure";
 import dayjs from "dayjs";
 
 const { confirm } = Modal;
@@ -25,7 +25,7 @@ export const NewsletterSubscriberListEnhanced = () => {
 
     const { open } = useNotification();
     const [importing, setImporting] = useState(false);
-    const { exportToExcel, exportToCSV } = useExport();
+    const { exportToExcel, exportToCSV, loading } = useExportSecure();
 
     // Fonction d'export Excel détaillé
     const handleExportExcel = async () => {
