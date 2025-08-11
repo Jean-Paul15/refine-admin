@@ -1,16 +1,20 @@
 import { useState, useEffect } from "react";
-import { Card, Col, Row, Statistic, Typography } from "antd";
+import { Card, Col, Row, Statistic, Typography, Progress, Alert, Space, Button } from "antd";
 import {
     UserOutlined,
     FileTextOutlined,
     MailOutlined,
     SettingOutlined,
     ThunderboltOutlined,
+    HomeOutlined,
+    CalendarOutlined,
+    TeamOutlined,
+    CheckCircleOutlined,
+    PlusOutlined
 } from "@ant-design/icons";
-import { ThemeSettings, NotificationDemo } from "../../components";
 import { supabaseClient } from "../../utility";
 
-const { Title } = Typography;
+const { Title, Text, Paragraph } = Typography;
 
 export const DashboardPage = () => {
     const [stats, setStats] = useState({
@@ -52,153 +56,210 @@ export const DashboardPage = () => {
     }, []);
 
     return (
-        <div style={{ padding: "24px" }}>
-            <Title level={2}>Tableau de bord</Title>
+        <div style={{ padding: "24px", backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+            {/* En-tête personnalisé pour la Maison de Charlotte */}
+            <div style={{
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                borderRadius: "12px",
+                padding: "32px",
+                marginBottom: "32px",
+                color: "white"
+            }}>
+                <Row align="middle">
+                    <Col span={18}>
+                        <Title level={1} style={{ color: "white", margin: 0, marginBottom: "8px" }}>
+                            Maison de Charlotte
+                        </Title>
+                        <Paragraph style={{ color: "rgba(255,255,255,0.9)", fontSize: "18px", margin: 0 }}>
+                            Interface d'administration - Gestion du contenu et des services
+                        </Paragraph>
+                    </Col>
+                    <Col span={6} style={{ textAlign: "right" }}>
+                        <HomeOutlined style={{ fontSize: "64px", opacity: 0.7 }} />
+                    </Col>
+                </Row>
+            </div>
 
-            <Row gutter={[16, 16]} style={{ marginBottom: "24px" }}>
+            {/* Statistiques principales */}
+            <Title level={2} style={{ marginBottom: "24px" }}>Vue d'ensemble</Title>
+
+            <Row gutter={[24, 24]} style={{ marginBottom: "32px" }}>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card>
+                    <Card hoverable style={{ borderRadius: "12px", border: "1px solid #e8f4f8" }}>
                         <Statistic
-                            title="Utilisateurs"
+                            title="Résidents et Familles"
                             value={stats.profilesCount}
-                            prefix={<UserOutlined />}
-                            valueStyle={{ color: "#3f8600" }}
+                            prefix={<TeamOutlined style={{ color: "#52c41a" }} />}
+                            valueStyle={{ color: "#52c41a", fontSize: "28px" }}
                         />
+                        <Text type="secondary">Profils enregistrés</Text>
                     </Card>
                 </Col>
 
                 <Col xs={24} sm={12} lg={6}>
-                    <Card>
+                    <Card hoverable style={{ borderRadius: "12px", border: "1px solid #fff7e6" }}>
                         <Statistic
-                            title="Articles"
-                            value={stats.articlesCount}
-                            prefix={<FileTextOutlined />}
-                            valueStyle={{ color: "#1890ff" }}
-                        />
-                    </Card>
-                </Col>
-
-                <Col xs={24} sm={12} lg={6}>
-                    <Card>
-                        <Statistic
-                            title="Articles publiés"
+                            title="Articles Publiés"
                             value={stats.publishedArticles}
-                            prefix={<FileTextOutlined />}
-                            valueStyle={{ color: "#52c41a" }}
+                            prefix={<CheckCircleOutlined style={{ color: "#fa8c16" }} />}
+                            valueStyle={{ color: "#fa8c16", fontSize: "28px" }}
                         />
+                        <Text type="secondary">Contenu en ligne</Text>
                     </Card>
                 </Col>
 
                 <Col xs={24} sm={12} lg={6}>
-                    <Card>
+                    <Card hoverable style={{ borderRadius: "12px", border: "1px solid #f6ffed" }}>
                         <Statistic
-                            title="Abonnés newsletter"
+                            title="Abonnés Newsletter"
                             value={stats.subscribersCount}
-                            prefix={<MailOutlined />}
-                            valueStyle={{ color: "#722ed1" }}
+                            prefix={<MailOutlined style={{ color: "#722ed1" }} />}
+                            valueStyle={{ color: "#722ed1", fontSize: "28px" }}
                         />
+                        <Text type="secondary">Communication active</Text>
                     </Card>
                 </Col>
-            </Row>
 
-            <Row gutter={[16, 16]}>
                 <Col xs={24} sm={12} lg={6}>
-                    <Card>
+                    <Card hoverable style={{ borderRadius: "12px", border: "1px solid #fff1f0" }}>
                         <Statistic
-                            title="Actions actives"
+                            title="Activités en Cours"
                             value={stats.actionsCount}
-                            prefix={<ThunderboltOutlined />}
-                            valueStyle={{ color: "#fa8c16" }}
+                            prefix={<CalendarOutlined style={{ color: "#1890ff" }} />}
+                            valueStyle={{ color: "#1890ff", fontSize: "28px" }}
                         />
-                    </Card>
-                </Col>
-
-                <Col xs={24} sm={12} lg={6}>
-                    <Card>
-                        <Statistic
-                            title="Paramètres configurés"
-                            value={stats.settingsCount}
-                            prefix={<SettingOutlined />}
-                            valueStyle={{ color: "#13c2c2" }}
-                        />
+                        <Text type="secondary">Événements planifiés</Text>
                     </Card>
                 </Col>
             </Row>
 
-            {/* Section des actions rapides */}
+            {/* Statistiques détaillées */}
+            <Row gutter={[24, 24]} style={{ marginBottom: "32px" }}>
+                <Col xs={24} lg={16}>
+                    <Card title="Aperçu de l'activité" style={{ borderRadius: "12px" }}>
+                        <Row gutter={[16, 16]}>
+                            <Col span={12}>
+                                <Statistic
+                                    title="Total des articles"
+                                    value={stats.articlesCount}
+                                    prefix={<FileTextOutlined />}
+                                    suffix={
+                                        <Text type="secondary">
+                                            ({Math.round((stats.publishedArticles / stats.articlesCount) * 100) || 0}% publiés)
+                                        </Text>
+                                    }
+                                />
+                                <Progress
+                                    percent={Math.round((stats.publishedArticles / stats.articlesCount) * 100) || 0}
+                                    strokeColor="#52c41a"
+                                    style={{ marginTop: "8px" }}
+                                />
+                            </Col>
+                            <Col span={12}>
+                                <Statistic
+                                    title="Configuration système"
+                                    value={stats.settingsCount}
+                                    prefix={<SettingOutlined />}
+                                    suffix={<Text type="secondary">paramètres</Text>}
+                                />
+                            </Col>
+                        </Row>
+                    </Card>
+                </Col>
+                <Col xs={24} lg={8}>
+                    <Card title="Actions rapides" style={{ borderRadius: "12px" }}>
+                        <Space direction="vertical" style={{ width: "100%" }}>
+                            <Button
+                                type="primary"
+                                icon={<PlusOutlined />}
+                                block
+                                onClick={() => window.location.href = "/articles/create"}
+                            >
+                                Nouvel article
+                            </Button>
+                            <Button
+                                icon={<CalendarOutlined />}
+                                block
+                                onClick={() => window.location.href = "/actions/create"}
+                            >
+                                Nouvelle activité
+                            </Button>
+                            <Button
+                                icon={<MailOutlined />}
+                                block
+                                onClick={() => window.location.href = "/newsletter-subscribers"}
+                            >
+                                Gérer newsletter
+                            </Button>
+                        </Space>
+                    </Card>
+                </Col>
+            </Row>
+
+            {/* Section de gestion du contenu */}
+            <Title level={3} style={{ marginBottom: "24px" }}>Gestion du contenu</Title>
+            <Row gutter={[24, 24]}>
+                <Col xs={24} sm={12} lg={8}>
+                    <Card
+                        hoverable
+                        style={{ borderRadius: "12px" }}
+                        onClick={() => window.location.href = "/articles"}
+                    >
+                        <Card.Meta
+                            avatar={<FileTextOutlined style={{ fontSize: "32px", color: "#1890ff" }} />}
+                            title="Articles et Actualités"
+                            description="Gérer le contenu éditorial, actualités et informations pour les résidents et familles"
+                        />
+                        <div style={{ marginTop: "16px", textAlign: "right" }}>
+                            <Text type="secondary">{stats.articlesCount} articles • {stats.publishedArticles} publiés</Text>
+                        </div>
+                    </Card>
+                </Col>
+
+                <Col xs={24} sm={12} lg={8}>
+                    <Card
+                        hoverable
+                        style={{ borderRadius: "12px" }}
+                        onClick={() => window.location.href = "/actions"}
+                    >
+                        <Card.Meta
+                            avatar={<ThunderboltOutlined style={{ fontSize: "32px", color: "#fa8c16" }} />}
+                            title="Activités et Événements"
+                            description="Planifier et organiser les activités, sorties et événements de la maison"
+                        />
+                        <div style={{ marginTop: "16px", textAlign: "right" }}>
+                            <Text type="secondary">{stats.actionsCount} activités actives</Text>
+                        </div>
+                    </Card>
+                </Col>
+
+                <Col xs={24} sm={12} lg={8}>
+                    <Card
+                        hoverable
+                        style={{ borderRadius: "12px" }}
+                        onClick={() => window.location.href = "/profiles"}
+                    >
+                        <Card.Meta
+                            avatar={<UserOutlined style={{ fontSize: "32px", color: "#52c41a" }} />}
+                            title="Résidents et Familles"
+                            description="Gérer les profils des résidents, contacts familiaux et informations personnelles"
+                        />
+                        <div style={{ marginTop: "16px", textAlign: "right" }}>
+                            <Text type="secondary">{stats.profilesCount} profils enregistrés</Text>
+                        </div>
+                    </Card>
+                </Col>
+            </Row>
+
+            {/* Message de bienvenue personnalisé */}
             <div style={{ marginTop: "32px" }}>
-                <Title level={3}>Actions rapides</Title>
-                <Row gutter={[16, 16]}>
-                    <Col xs={24} sm={12} lg={8}>
-                        <Card
-                            hoverable
-                            onClick={() => window.location.href = "/articles/create"}
-                            style={{ cursor: "pointer" }}
-                        >
-                            <Card.Meta
-                                avatar={<FileTextOutlined style={{ fontSize: "24px" }} />}
-                                title="Créer un article"
-                                description="Rédiger un nouvel article avec WYSIWYG"
-                            />
-                        </Card>
-                    </Col>
-
-                    <Col xs={24} sm={12} lg={8}>
-                        <Card
-                            hoverable
-                            onClick={() => window.location.href = "/actions/create"}
-                            style={{ cursor: "pointer" }}
-                        >
-                            <Card.Meta
-                                avatar={<ThunderboltOutlined style={{ fontSize: "24px" }} />}
-                                title="Créer une action"
-                                description="Ajouter une nouvelle action/événement"
-                            />
-                        </Card>
-                    </Col>
-
-                    <Col xs={24} sm={12} lg={8}>
-                        <Card
-                            hoverable
-                            onClick={() => window.location.href = "/settings/create"}
-                            style={{ cursor: "pointer" }}
-                        >
-                            <Card.Meta
-                                avatar={<SettingOutlined style={{ fontSize: "24px" }} />}
-                                title="Gérer les paramètres"
-                                description="Configurer les paramètres du site"
-                            />
-                        </Card>
-                    </Col>
-                </Row>
-
-                <Row gutter={[16, 16]} style={{ marginTop: "16px" }}>
-                    <Col xs={24} sm={12} lg={8}>
-                        <Card
-                            hoverable
-                            onClick={() => window.location.href = "/newsletter-subscribers"}
-                            style={{ cursor: "pointer" }}
-                        >
-                            <Card.Meta
-                                avatar={<MailOutlined style={{ fontSize: "24px" }} />}
-                                title="Gérer la newsletter"
-                                description="Voir les abonnés et envoyer des emails"
-                            />
-                        </Card>
-                    </Col>
-                </Row>
-                {/* Section des outils et paramètres */}
-                <div style={{ marginTop: "32px" }}>
-                    <Title level={3}>Outils et paramètres</Title>
-                    <Row gutter={[16, 16]}>
-                        <Col xs={24} md={12}>
-                            <ThemeSettings />
-                        </Col>
-                        <Col xs={24} md={12}>
-                            <NotificationDemo />
-                        </Col>
-                    </Row>
-                </div>
+                <Alert
+                    message="Bienvenue dans l'interface d'administration de la Maison de Charlotte"
+                    description="Cette plateforme vous permet de gérer efficacement le contenu, les activités et la communication avec les résidents et leurs familles. Utilisez les outils ci-dessus pour maintenir un environnement chaleureux et bien organisé."
+                    type="info"
+                    showIcon
+                    style={{ borderRadius: "12px" }}
+                />
             </div>
         </div>
     );

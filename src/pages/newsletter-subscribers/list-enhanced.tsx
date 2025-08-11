@@ -8,12 +8,13 @@ import {
     useTable,
 } from "@refinedev/antd";
 import { BaseRecord, useNotification } from "@refinedev/core";
-import { Space, Table, Button, Upload, message, Modal } from "antd";
+import { Space, Table, Button, Upload, Modal } from "antd";
 import { DownloadOutlined, UploadOutlined, ExclamationCircleOutlined } from "@ant-design/icons";
 import Papa from "papaparse";
-import { saveAs } from "file-saver";
 import { supabaseClient } from "../../utility";
 import { useState } from "react";
+import { useExport } from "../../hooks/useExport";
+import dayjs from "dayjs";
 
 const { confirm } = Modal;
 
@@ -24,59 +25,26 @@ export const NewsletterSubscriberListEnhanced = () => {
 
     const { open } = useNotification();
     const [importing, setImporting] = useState(false);
+    const { exportToExcel, exportToCSV } = useExport();
 
-    // Fonction d'export CSV
-    const exportToCSV = () => {
+    // Fonction d'export Excel détaillé
+    const handleExportExcel = async () => {
         const data = tableProps.dataSource || [];
 
-        // Préparer les données pour l'export
-        const csvData = data.map((item: any) => ({
-            Email: item.email,
-            'Date d\'inscription': new Date(item.subscribed_at).toLocaleDateString('fr-FR'),
+        const exportData = data.map((item: BaseRecord) => ({
+            'ID': String(item.id || ''),
+            'Email': String(item.email || ''),
+            'Date d\'inscription': item.subscribed_at ? dayjs(item.subscribed_at).format('DD/MM/YYYY HH:mm') : '',
             'Statut': item.is_active ? 'Actif' : 'Inactif',
+            'Nom': String(item.name || ''),
+            'Prénom': String(item.first_name || ''),
+            'Téléphone': String(item.phone || ''),
+            'Dernière modification': item.updated_at ? dayjs(item.updated_at).format('DD/MM/YYYY HH:mm') : ''
         }));
 
-        // Convertir en CSV
-        const csv = Papa.unparse(csvData, {
-            delimiter: ';', // Point-virgule pour Excel français
-            header: true,
-        });
-
-        // Télécharger le fichier
-        const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-        saveAs(blob, `newsletter-subscribers-${new Date().toISOString().split('T')[0]}.csv`);
-
-        open?.({
-            type: "success",
-            message: "Export réussi",
-            description: "Les abonnés ont été exportés avec succès.",
-        });
-    };
-
-    // Fonction d'export Excel (format CSV compatible Excel)
-    const exportToExcel = () => {
-        const data = tableProps.dataSource || [];
-
-        const excelData = data.map((item: any) => ({
-            'Email': item.email,
-            'Date d\'inscription': new Date(item.subscribed_at).toLocaleDateString('fr-FR'),
-            'Heure d\'inscription': new Date(item.subscribed_at).toLocaleTimeString('fr-FR'),
-            'Statut': item.is_active ? 'Actif' : 'Inactif',
-            'ID': item.id,
-        }));
-
-        const csv = Papa.unparse(excelData, {
-            delimiter: ';',
-            header: true,
-        });
-
-        const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-        saveAs(blob, `newsletter-subscribers-detail-${new Date().toISOString().split('T')[0]}.csv`);
-
-        open?.({
-            type: "success",
-            message: "Export Excel réussi",
-            description: "Les données détaillées ont été exportées au format Excel.",
+        await exportToExcel(exportData, {
+            filename: `newsletter_abonnes_detaille_${dayjs().format('YYYY-MM-DD')}`,
+            sheetName: 'Abonnés Newsletter'
         });
     };
 
@@ -93,9 +61,9 @@ export const NewsletterSubscriberListEnhanced = () => {
                     const errors: string[] = [];
 
                     // Valider les emails
-                    results.data.forEach((row: any, index: number) => {
+                    (results.data as Record<string, unknown>[]).forEach((row, index: number) => {
                         const email = row.Email || row.email || row.EMAIL;
-                        if (email && /\S+@\S+\.\S+/.test(email)) {
+                        if (email && typeof email === 'string' && /\S+@\S+\.\S+/.test(email)) {
                             validEmails.push(email);
                         } else {
                             errors.push(`Ligne ${index + 1}: Email invalide "${email}"`);
@@ -156,11 +124,12 @@ export const NewsletterSubscriberListEnhanced = () => {
                             },
                         });
                     }
-                } catch (error: any) {
+                } catch (error: unknown) {
+                    const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
                     open?.({
                         type: "error",
                         message: "Erreur d'import",
-                        description: error.message,
+                        description: errorMessage,
                     });
                 } finally {
                     setImporting(false);
@@ -185,6 +154,22 @@ export const NewsletterSubscriberListEnhanced = () => {
         beforeUpload: handleImport,
     };
 
+    // Wrapper function for CSV export onClick handler
+    const handleExportCSV = async () => {
+        const data = tableProps.dataSource || [];
+        const preparedData = data.map((subscriber: BaseRecord) => ({
+            ID: String(subscriber.id || ''),
+            Email: String(subscriber.email || ''),
+            'Date d\'inscription': subscriber.created_at ? new Date(subscriber.created_at).toLocaleDateString('fr-FR') : '',
+            'Dernière mise à jour': subscriber.updated_at ? new Date(subscriber.updated_at).toLocaleDateString('fr-FR') : ''
+        }));
+
+        await exportToCSV(preparedData, {
+            filename: 'newsletter-subscribers',
+            sheetName: 'Abonnés Newsletter'
+        });
+    };
+
     return (
         <List
             headerButtons={({ defaultButtons }) => (
@@ -194,14 +179,14 @@ export const NewsletterSubscriberListEnhanced = () => {
                         <Button
                             type="primary"
                             icon={<DownloadOutlined />}
-                            onClick={exportToCSV}
+                            onClick={handleExportCSV}
                         >
                             Export CSV
                         </Button>
                         <Button
                             type="default"
                             icon={<DownloadOutlined />}
-                            onClick={exportToExcel}
+                            onClick={handleExportExcel}
                         >
                             Export Excel
                         </Button>
@@ -229,7 +214,7 @@ export const NewsletterSubscriberListEnhanced = () => {
                 <Table.Column
                     dataIndex={["subscribed_at"]}
                     title="Inscrit le"
-                    render={(value: any) => <DateField value={value} format="DD/MM/YYYY HH:mm" />}
+                    render={(value: string | number | Date) => <DateField value={value} format="DD/MM/YYYY HH:mm" />}
                     width={150}
                 />
                 <Table.Column

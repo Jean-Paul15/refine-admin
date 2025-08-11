@@ -11,7 +11,7 @@ import {
 import React, { useContext } from "react";
 import { ColorModeContext } from "../../contexts/color-mode";
 
-const { Text } = Typography;
+const { Text, Title } = Typography;
 const { useToken } = theme;
 
 type IUser = {
@@ -30,10 +30,11 @@ export const Header: React.FC<RefineThemedLayoutV2HeaderProps> = ({
   const headerStyles: React.CSSProperties = {
     backgroundColor: token.colorBgElevated,
     display: "flex",
-    justifyContent: "flex-end",
+    justifyContent: "space-between",
     alignItems: "center",
     padding: "0px 24px",
     height: "64px",
+    borderBottom: "1px solid #f0f0f0",
   };
 
   if (sticky) {
@@ -44,15 +45,38 @@ export const Header: React.FC<RefineThemedLayoutV2HeaderProps> = ({
 
   return (
     <AntdLayout.Header style={headerStyles}>
+      <div style={{ display: "flex", alignItems: "center" }}>
+        <Title
+          level={4}
+          style={{
+            margin: 0,
+            color: "#1890ff",
+            fontWeight: "600",
+            letterSpacing: "0.5px"
+          }}
+        >
+          Maison de Charlotte
+        </Title>
+        <Text
+          type="secondary"
+          style={{
+            marginLeft: "16px",
+            fontSize: "14px",
+            fontStyle: "italic"
+          }}
+        >
+          Administration
+        </Text>
+      </div>
       <Space>
         <Switch
-          checkedChildren="🌛"
-          unCheckedChildren="🔆"
+          checkedChildren="Sombre"
+          unCheckedChildren="Clair"
           onChange={() => setMode(mode === "light" ? "dark" : "light")}
           defaultChecked={mode === "dark"}
         />
-        <Space style={{ marginLeft: "8px" }} size="middle">
-          {user?.name && <Text strong>{user.name}</Text>}
+        <Space style={{ marginLeft: "16px" }} size="middle">
+          {user?.name && <Text strong style={{ color: "#1890ff" }}>{user.name}</Text>}
           {user?.avatar && <Avatar src={user?.avatar} alt={user?.name} />}
         </Space>
       </Space>
