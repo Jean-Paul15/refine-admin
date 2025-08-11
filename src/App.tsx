@@ -7,6 +7,7 @@ import {
   ThunderboltOutlined,
   SettingOutlined,
   DashboardOutlined,
+  HeartOutlined,
 } from "@ant-design/icons";
 
 import {
@@ -61,6 +62,12 @@ import {
   SettingList,
   SettingShow,
 } from "./pages/settings";
+import {
+  DonsEngagementsCreate,
+  DonsEngagementsEdit,
+  DonsEngagementsList,
+  DonsEngagementsShow,
+} from "./pages/dons-engagements";
 import { supabaseClient } from "./utility";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useErrorHandler } from "./hooks/useErrorHandler";
@@ -150,6 +157,18 @@ function App() {
                       canDelete: true,
                     },
                   },
+                  {
+                    name: "formulaire_contact",
+                    list: "/dons-engagements",
+                    create: "/dons-engagements/create",
+                    edit: "/dons-engagements/edit/:id",
+                    show: "/dons-engagements/show/:id",
+                    meta: {
+                      label: "Dons/Engagements",
+                      icon: <HeartOutlined />,
+                      canDelete: true,
+                    },
+                  },
                 ]}
                 options={{
                   syncWithLocation: true,
@@ -207,6 +226,12 @@ function App() {
                       <Route path="create" element={<SettingCreate />} />
                       <Route path="edit/:id" element={<SettingEdit />} />
                       <Route path="show/:id" element={<SettingShow />} />
+                    </Route>
+                    <Route path="/dons-engagements">
+                      <Route index element={<DonsEngagementsList />} />
+                      <Route path="create" element={<DonsEngagementsCreate />} />
+                      <Route path="edit/:id" element={<DonsEngagementsEdit />} />
+                      <Route path="show/:id" element={<DonsEngagementsShow />} />
                     </Route>
                     <Route path="*" element={<ErrorComponent />} />
                   </Route>

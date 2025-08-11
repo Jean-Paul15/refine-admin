@@ -102,7 +102,7 @@ export const NewsletterSubscriberListEnhanced = () => {
                                 }));
 
                                 // Insérer dans Supabase
-                                const { data, error } = await supabaseClient
+                                const { error } = await supabaseClient
                                     .from('newsletter_subscribers')
                                     .upsert(subscribersData, {
                                         onConflict: 'email',

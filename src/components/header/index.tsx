@@ -10,6 +10,7 @@ import {
 } from "antd";
 import React, { useContext } from "react";
 import { ColorModeContext } from "../../contexts/color-mode";
+import { NotificationBell } from "../notification-bell";
 
 const { Text, Title } = Typography;
 const { useToken } = theme;
@@ -69,6 +70,7 @@ export const Header: React.FC<RefineThemedLayoutV2HeaderProps> = ({
         </Text>
       </div>
       <Space>
+        <NotificationBell />
         <Switch
           checkedChildren="Sombre"
           unCheckedChildren="Clair"

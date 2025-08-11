@@ -10,7 +10,9 @@ import {
     CalendarOutlined,
     TeamOutlined,
     CheckCircleOutlined,
-    PlusOutlined
+    PlusOutlined,
+    HeartOutlined,
+    DollarOutlined
 } from "@ant-design/icons";
 import { supabaseClient } from "../../utility";
 
@@ -24,20 +26,31 @@ export const DashboardPage = () => {
         subscribersCount: 0,
         actionsCount: 0,
         settingsCount: 0,
+        donsCount: 0,
+        engagementsCount: 0,
+        montantTotal: 0,
+        nouveauxFormulaires: 0,
     });
 
     useEffect(() => {
         const fetchStats = async () => {
             try {
                 // Récupérer les statistiques depuis Supabase
-                const [profiles, articles, published, subscribers, actions, settings] = await Promise.all([
+                const [profiles, articles, published, subscribers, actions, settings, dons, engagements, montants, nouveaux] = await Promise.all([
                     supabaseClient.from("profiles").select("*", { count: "exact", head: true }),
                     supabaseClient.from("articles").select("*", { count: "exact", head: true }),
                     supabaseClient.from("articles").select("*", { count: "exact", head: true }).eq("is_published", true),
                     supabaseClient.from("newsletter_subscribers").select("*", { count: "exact", head: true }).eq("is_active", true),
                     supabaseClient.from("actions").select("*", { count: "exact", head: true }).eq("is_active", true),
                     supabaseClient.from("settings").select("*", { count: "exact", head: true }),
+                    supabaseClient.from("formulaire_contact").select("*", { count: "exact", head: true }).eq("est_engagement", false),
+                    supabaseClient.from("formulaire_contact").select("*", { count: "exact", head: true }).eq("est_engagement", true),
+                    supabaseClient.from("formulaire_contact").select("montant").not("montant", "is", null),
+                    supabaseClient.from("formulaire_contact").select("*", { count: "exact", head: true }).eq("statut", "nouveau"),
                 ]);
+
+                // Calculer le montant total
+                const montantTotal = montants.data?.reduce((total, item) => total + (Number(item.montant) || 0), 0) || 0;
 
                 setStats({
                     profilesCount: profiles.count || 0,
@@ -46,6 +59,10 @@ export const DashboardPage = () => {
                     subscribersCount: subscribers.count || 0,
                     actionsCount: actions.count || 0,
                     settingsCount: settings.count || 0,
+                    donsCount: dons.count || 0,
+                    engagementsCount: engagements.count || 0,
+                    montantTotal,
+                    nouveauxFormulaires: nouveaux.count || 0,
                 });
             } catch (error) {
                 console.error("Erreur lors du chargement des statistiques:", error);
@@ -133,6 +150,71 @@ export const DashboardPage = () => {
                 </Col>
             </Row>
 
+            {/* Section Dons et Engagements */}
+            <Title level={2} style={{ marginBottom: "24px", color: "#722ed1" }}>Dons et Engagements</Title>
+
+            <Row gutter={[24, 24]} style={{ marginBottom: "32px" }}>
+                <Col xs={24} sm={12} lg={6}>
+                    <Card hoverable style={{ borderRadius: "12px", border: "2px solid #ffadd6", background: "linear-gradient(135deg, #fff0f6 0%, #ffadd6 100%)" }}>
+                        <Statistic
+                            title="Dons Ponctuels"
+                            value={stats.donsCount}
+                            prefix={<HeartOutlined style={{ color: "#eb2f96" }} />}
+                            valueStyle={{ color: "#eb2f96", fontSize: "28px", fontWeight: "bold" }}
+                        />
+                        <Text type="secondary">Contributions uniques</Text>
+                    </Card>
+                </Col>
+
+                <Col xs={24} sm={12} lg={6}>
+                    <Card hoverable style={{ borderRadius: "12px", border: "2px solid #b37feb", background: "linear-gradient(135deg, #f9f0ff 0%, #b37feb 100%)" }}>
+                        <Statistic
+                            title="Engagements Réguliers"
+                            value={stats.engagementsCount}
+                            prefix={<DollarOutlined style={{ color: "#722ed1" }} />}
+                            valueStyle={{ color: "#722ed1", fontSize: "28px", fontWeight: "bold" }}
+                        />
+                        <Text type="secondary">Soutien continu</Text>
+                    </Card>
+                </Col>
+
+                <Col xs={24} sm={12} lg={6}>
+                    <Card hoverable style={{ borderRadius: "12px", border: "2px solid #52c41a", background: "linear-gradient(135deg, #f6ffed 0%, #b7eb8f 100%)" }}>
+                        <Statistic
+                            title="Montant Total"
+                            value={stats.montantTotal}
+                            suffix=" XAF"
+                            precision={0}
+                            valueStyle={{ color: "#389e0d", fontSize: "20px", fontWeight: "bold" }}
+                        />
+                        <Text type="secondary">Contributions reçues</Text>
+                    </Card>
+                </Col>
+
+                <Col xs={24} sm={12} lg={6}>
+                    <Card hoverable style={{
+                        borderRadius: "12px",
+                        border: stats.nouveauxFormulaires > 0 ? "2px solid #ff4d4f" : "1px solid #d9d9d9",
+                        background: stats.nouveauxFormulaires > 0 ? "linear-gradient(135deg, #fff2f0 0%, #ffccc7 100%)" : "white",
+                        animation: stats.nouveauxFormulaires > 0 ? "pulse 2s infinite" : "none"
+                    }}>
+                        <Statistic
+                            title="Nouveaux Formulaires"
+                            value={stats.nouveauxFormulaires}
+                            prefix={<HeartOutlined style={{ color: stats.nouveauxFormulaires > 0 ? "#ff4d4f" : "#d9d9d9" }} />}
+                            valueStyle={{
+                                color: stats.nouveauxFormulaires > 0 ? "#ff4d4f" : "#d9d9d9",
+                                fontSize: "28px",
+                                fontWeight: "bold"
+                            }}
+                        />
+                        <Text type={stats.nouveauxFormulaires > 0 ? "danger" : "secondary"}>
+                            {stats.nouveauxFormulaires > 0 ? "À traiter!" : "Aucun nouveau"}
+                        </Text>
+                    </Card>
+                </Col>
+            </Row>
+
             {/* Statistiques détaillées */}
             <Row gutter={[24, 24]} style={{ marginBottom: "32px" }}>
                 <Col xs={24} lg={16}>
@@ -176,6 +258,18 @@ export const DashboardPage = () => {
                                 onClick={() => window.location.href = "/articles/create"}
                             >
                                 Nouvel article
+                            </Button>
+                            <Button
+                                icon={<HeartOutlined />}
+                                block
+                                style={{
+                                    backgroundColor: stats.nouveauxFormulaires > 0 ? "#ff4d4f" : undefined,
+                                    color: stats.nouveauxFormulaires > 0 ? "white" : undefined,
+                                    borderColor: stats.nouveauxFormulaires > 0 ? "#ff4d4f" : undefined
+                                }}
+                                onClick={() => window.location.href = "/dons-engagements"}
+                            >
+                                {stats.nouveauxFormulaires > 0 ? `Dons/Engagements (${stats.nouveauxFormulaires} nouveaux!)` : "Dons/Engagements"}
                             </Button>
                             <Button
                                 icon={<CalendarOutlined />}
