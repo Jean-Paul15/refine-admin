@@ -7,7 +7,7 @@ import {
     useTable,
 } from "@refinedev/antd";
 import { BaseRecord } from "@refinedev/core";
-import { Space, Table, Typography, Image, Tag } from "antd";
+import { Space, Table, Typography, Image } from "antd";
 import dayjs from "dayjs";
 
 const { Text } = Typography;
@@ -72,24 +72,13 @@ export const ActionList = () => {
                 />
 
                 <Table.Column
-                    dataIndex="is_active"
-                    title="Statut"
-                    render={(value: boolean) => (
-                        <Tag color={value ? "green" : "red"}>
-                            {value ? "Active" : "Inactive"}
-                        </Tag>
-                    )}
-                    sorter
-                />
-
-                <Table.Column
                     dataIndex="full_content"
                     title="Contenu"
                     render={(value: string) => {
                         if (!value) return <Text type="secondary">Aucun contenu</Text>;
 
                         // Extraire le texte du markdown et le tronquer
-                        const textContent = value.replace(/[#*`[\]]/g, '').trim();
+                        const textContent = value.replace(/[#*`\[\]]/g, '').trim();
                         const truncated = textContent.length > 100
                             ? textContent.substring(0, 100) + '...'
                             : textContent;

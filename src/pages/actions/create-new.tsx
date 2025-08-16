@@ -1,11 +1,10 @@
 import { Create, useForm } from "@refinedev/antd";
-import { Form, Input, Upload, Button, message, Switch } from "antd";
+import { Form, Input, Upload, Button, message } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import { useState, useEffect } from "react";
 import { supabaseClient } from "../../utility";
 import SafeDatePicker from "../../components/SafeDatePicker";
 import MDEditor from "@uiw/react-md-editor";
-import dayjs from "dayjs";
 import type { Dayjs } from "dayjs";
 
 export const ActionCreate = () => {
@@ -20,32 +19,25 @@ export const ActionCreate = () => {
         formProps.form?.setFieldsValue({
             created_at: now,
             title: generateTitle(now), // Titre généré automatiquement
-            is_active: true, // Par défaut actif
         });
     }, [formProps.form]);
-
-    // Regénérer le titre dès que created_at change
-    const createdAt = Form.useWatch(["created_at"], formProps.form);
-    useEffect(() => {
-        if (!createdAt) return;
-        let d: Date | null = null;
-        if (dayjs.isDayjs(createdAt)) d = createdAt.toDate();
-        else if (createdAt instanceof Date) d = createdAt;
-        else if (typeof createdAt === "string") d = new Date(createdAt);
-        if (d && !isNaN(d.getTime())) {
-            formProps.form?.setFieldsValue({ title: generateTitle(d) });
-        }
-    }, [createdAt, formProps.form]);
-
-    // Plus besoin de handleDateChange, le titre est regénéré via useWatch ci-dessus
 
     // Fonction pour générer un titre basé sur la date
     const generateTitle = (date: Date) => {
         const options: Intl.DateTimeFormatOptions = {
             year: 'numeric',
-            month: 'long'
+            month: 'long',
+            day: 'numeric'
         };
-        return date.toLocaleDateString('fr-FR', options).toUpperCase();
+        return `Activité du ${date.toLocaleDateString('fr-FR', options)}`;
+    };
+
+    // Fonction pour gérer le changement de date
+    const handleDateChange = (date: Dayjs | null) => {
+        if (date) {
+            const title = generateTitle(date.toDate());
+            formProps.form?.setFieldsValue({ title });
+        }
     };
 
     // Fonction pour supprimer l'image uploadée
@@ -139,6 +131,7 @@ export const ActionCreate = () => {
                         format="YYYY-MM-DD HH:mm:ss"
                         placeholder="Sélectionnez une date"
                         style={{ width: "100%" }}
+                        onChange={handleDateChange}
                     />
                 </Form.Item>
 
@@ -215,18 +208,6 @@ export const ActionCreate = () => {
                         data-color-mode="light"
                         preview="edit"
                         hideToolbar={false}
-                    />
-                </Form.Item>
-
-                <Form.Item
-                    label="Statut d'activité"
-                    name={["is_active"]}
-                    valuePropName="checked"
-                    help="Activez pour rendre l'activité visible"
-                >
-                    <Switch
-                        checkedChildren="Active"
-                        unCheckedChildren="Inactive"
                     />
                 </Form.Item>
             </Form>

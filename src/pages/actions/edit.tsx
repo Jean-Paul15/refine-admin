@@ -1,30 +1,68 @@
 import { Edit, useForm } from "@refinedev/antd";
-import { Form, Input, Switch, Select, Upload, Button, message } from "antd";
+import { Form, Input, Upload, Button, message, Switch } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import { useState, useEffect } from "react";
-import { supabaseClient } from "../../utility/supabaseClient";
+import { supabaseClient } from "../../utility";
+import SafeDatePicker from "../../components/SafeDatePicker";
+import MDEditor from "@uiw/react-md-editor";
+import dayjs from "dayjs";
 
 export const ActionEdit = () => {
     const { formProps, saveButtonProps, queryResult } = useForm();
+    const [imageUrl, setImageUrl] = useState<string>("");
     const [imageUploading, setImageUploading] = useState(false);
-    const [imageUrl, setImageUrl] = useState("");
     const [currentImagePath, setCurrentImagePath] = useState<string>("");
 
-    // Charger l'image existante
+    // Charger l'image existante et initialiser les valeurs du formulaire
     useEffect(() => {
-        if (queryResult?.data?.data?.image_url) {
-            const imageUrl = queryResult.data.data.image_url;
-            setImageUrl(imageUrl);
+        if (queryResult?.data?.data) {
+            const actionData = queryResult.data.data;
 
-            // Extraire le chemin de l'image pour pouvoir la supprimer plus tard
-            const urlParts = imageUrl.split('/uploads/');
-            if (urlParts.length > 1) {
-                setCurrentImagePath(`uploads/${urlParts[1]}`);
+            // Gérer l'image
+            if (actionData.image_url) {
+                const imageUrl = actionData.image_url;
+                setImageUrl(imageUrl);
+
+                // Extraire le chemin de l'image pour pouvoir la supprimer plus tard
+                const urlParts = imageUrl.split('/uploads/');
+                if (urlParts.length > 1) {
+                    setCurrentImagePath(`uploads/${urlParts[1]}`);
+                }
             }
-        }
-    }, [queryResult?.data?.data?.image_url]);
 
-    // Fonction pour supprimer l'ancienne image
+            // Initialiser les valeurs du formulaire avec gestion de la date
+            const formValues = {
+                ...actionData,
+                created_at: actionData.created_at ? new Date(actionData.created_at) : new Date(),
+            };
+
+            formProps.form?.setFieldsValue(formValues);
+        }
+    }, [queryResult?.data?.data, formProps.form]);
+
+    // Fonction pour générer un titre basé sur la date
+    const generateTitle = (date: Date) => {
+        const options: Intl.DateTimeFormatOptions = {
+            year: 'numeric',
+            month: 'long'
+        };
+        return date.toLocaleDateString('fr-FR', options).toUpperCase();
+    };
+
+    // Regénérer le titre dès que created_at change
+    const createdAt = Form.useWatch(["created_at"], formProps.form);
+    useEffect(() => {
+        if (!createdAt) return;
+        let d: Date | null = null;
+        if (dayjs.isDayjs(createdAt)) d = createdAt.toDate();
+        else if (createdAt instanceof Date) d = createdAt;
+        else if (typeof createdAt === "string") d = new Date(createdAt);
+        if (d && !isNaN(d.getTime())) {
+            formProps.form?.setFieldsValue({ title: generateTitle(d) });
+        }
+    }, [createdAt, formProps.form]);
+
+    // Fonction pour supprimer l'image uploadée
     const deleteOldImage = async (imagePath: string) => {
         if (!imagePath) return;
 
@@ -34,55 +72,38 @@ export const ActionEdit = () => {
                 .remove([imagePath]);
 
             if (error) {
-                console.warn('Erreur lors de la suppression de l\'ancienne image:', error);
+                console.warn('Erreur lors de la suppression de l\'image:', error);
             }
         } catch (error) {
-            console.warn('Erreur lors de la suppression de l\'ancienne image:', error);
+            console.warn('Erreur lors de la suppression de l\'image:', error);
         }
     };
 
-    // Générer automatiquement le slug à partir du titre
-    const generateSlug = (title: string): string => {
-        if (!title) return "";
-
-        return title
-            .toLowerCase()
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "") // Supprimer les accents
-            .replace(/[^a-z0-9\s-]/g, "") // Supprimer les caractères spéciaux
-            .trim()
-            .replace(/\s+/g, "-") // Remplacer les espaces par des tirets
-            .replace(/-+/g, "-") // Éviter les tirets multiples
-            .slice(0, 50); // Limiter à 50 caractères
-    };
-
-    const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const title = e.target.value;
-        const slug = generateSlug(title);
-        formProps.form?.setFieldsValue({ slug });
-    };
-
-    // Fonction pour uploader une image vers Supabase Storage
+    // Fonction pour uploader l'image dans Supabase Storage
     const uploadImage = async (file: File) => {
-        setImageUploading(true);
         try {
+            setImageUploading(true);
+
             // Supprimer l'ancienne image si elle existe
             if (currentImagePath) {
                 await deleteOldImage(currentImagePath);
             }
 
+            // Générer un nom de fichier unique
             const fileExt = file.name.split('.').pop();
-            const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+            const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
             const filePath = `uploads/actions/${fileName}`;
 
-            const { error: uploadError } = await supabaseClient.storage
+            // Upload vers Supabase Storage
+            const { error } = await supabaseClient.storage
                 .from('uploads')
                 .upload(filePath, file);
 
-            if (uploadError) {
-                throw uploadError;
+            if (error) {
+                throw error;
             }
 
+            // Récupérer l'URL publique
             const { data: { publicUrl } } = supabaseClient.storage
                 .from('uploads')
                 .getPublicUrl(filePath);
@@ -90,10 +111,12 @@ export const ActionEdit = () => {
             setImageUrl(publicUrl);
             setCurrentImagePath(filePath);
             formProps.form?.setFieldsValue({ image_url: publicUrl });
-            message.success("Image téléchargée avec succès !");
+            message.success('Image téléchargée avec succès !');
+
+            return publicUrl;
         } catch (error) {
             console.error('Erreur lors du téléchargement:', error);
-            message.error("Erreur lors du téléchargement de l'image");
+            message.error('Erreur lors du téléchargement de l\'image');
             throw error;
         } finally {
             setImageUploading(false);
@@ -107,15 +130,34 @@ export const ActionEdit = () => {
         }
         setImageUrl("");
         setCurrentImagePath("");
-        formProps.form?.setFieldsValue({ image_url: "" });
-        message.success("Image supprimée avec succès !");
+        formProps.form?.setFieldsValue({ image_url: null });
+        message.success('Image supprimée');
     };
 
     return (
         <Edit saveButtonProps={saveButtonProps}>
             <Form {...formProps} layout="vertical">
                 <Form.Item
-                    label="Titre de l'action"
+                    label="Date de création"
+                    name={["created_at"]}
+                    rules={[
+                        {
+                            required: true,
+                            message: "La date de création est obligatoire",
+                        },
+                    ]}
+                    help="Le titre sera généré automatiquement en fonction de cette date"
+                >
+                    <SafeDatePicker
+                        showTime
+                        format="YYYY-MM-DD HH:mm:ss"
+                        placeholder="Sélectionnez une date"
+                        style={{ width: "100%" }}
+                    />
+                </Form.Item>
+
+                <Form.Item
+                    label="Titre de l'activité"
                     name={["title"]}
                     rules={[
                         {
@@ -123,29 +165,15 @@ export const ActionEdit = () => {
                             message: "Le titre est obligatoire",
                         },
                     ]}
+                    help="Généré automatiquement à partir de la date, mais vous pouvez le modifier"
                 >
-                    <Input
-                        placeholder="Saisissez le titre de l'action"
-                        onChange={handleTitleChange}
-                    />
+                    <Input placeholder="Titre de l'activité" />
                 </Form.Item>
+
                 <Form.Item
-                    label="Slug (URL)"
-                    name={["slug"]}
-                    rules={[
-                        {
-                            required: true,
-                            message: "Le slug est obligatoire",
-                        },
-                    ]}
-                    help="Généré automatiquement à partir du titre. Vous pouvez le modifier."
-                >
-                    <Input placeholder="slug-de-l-action" />
-                </Form.Item>
-                <Form.Item
-                    label="Image de l'action"
+                    label="Image de l'activité"
                     name={["image_url"]}
-                    help="Téléchargez une image pour illustrer votre action"
+                    help="Téléchargez une image pour illustrer votre activité (optionnel)"
                 >
                     <div>
                         <Upload
@@ -191,50 +219,24 @@ export const ActionEdit = () => {
                         )}
                     </div>
                 </Form.Item>
+
                 <Form.Item
-                    label="Description courte"
-                    name={["description"]}
-                    help="Résumé de l'action qui apparaîtra dans les listes"
-                >
-                    <Input.TextArea
-                        rows={3}
-                        placeholder="Brève description de l'action..."
-                        maxLength={300}
-                        showCount
-                    />
-                </Form.Item>
-                <Form.Item
-                    label="Contenu complet"
+                    label="Contenu de l'activité"
                     name={["full_content"]}
-                    help="Description détaillée de l'action"
+                    help="Décrivez l'activité en détail"
                 >
-                    <Input.TextArea
-                        rows={10}
-                        placeholder="Description complète de l'action..."
-                        maxLength={2000}
-                        showCount
+                    <MDEditor
+                        data-color-mode="light"
+                        preview="edit"
+                        hideToolbar={false}
                     />
                 </Form.Item>
+
                 <Form.Item
-                    label="Type d'action"
-                    name={["type"]}
-                    help="Catégorisez votre action selon son statut"
-                >
-                    <Select
-                        placeholder="Sélectionnez un type"
-                        allowClear
-                        options={[
-                            { value: "carrousel", label: "Carrousel (mise en avant)" },
-                            { value: "principale", label: "Principale (en cours)" },
-                            { value: "passée", label: "Passée (archive)" },
-                        ]}
-                    />
-                </Form.Item>
-                <Form.Item
-                    label="Statut de l'action"
+                    label="Statut d'activité"
                     name={["is_active"]}
                     valuePropName="checked"
-                    help="Activez pour rendre l'action visible"
+                    help="Activez pour rendre l'activité visible"
                 >
                     <Switch
                         checkedChildren="Active"

@@ -1,28 +1,54 @@
-import { Create, useForm } from "@refinedev/antd";
-import { Form, Input, Upload, Button, message, Switch } from "antd";
+import { Edit, useForm } from "@refinedev/antd";
+import { Form, Input, Upload, Button, message } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import { useState, useEffect } from "react";
 import { supabaseClient } from "../../utility";
 import SafeDatePicker from "../../components/SafeDatePicker";
 import MDEditor from "@uiw/react-md-editor";
 import dayjs from "dayjs";
-import type { Dayjs } from "dayjs";
 
-export const ActionCreate = () => {
-    const { formProps, saveButtonProps } = useForm();
+export const ActionEdit = () => {
+    const { formProps, saveButtonProps, queryResult } = useForm();
     const [imageUrl, setImageUrl] = useState<string>("");
     const [imageUploading, setImageUploading] = useState(false);
     const [currentImagePath, setCurrentImagePath] = useState<string>("");
 
-    // Initialiser la date de création par défaut
+    // Charger l'image existante et initialiser les valeurs du formulaire
     useEffect(() => {
-        const now = new Date();
-        formProps.form?.setFieldsValue({
-            created_at: now,
-            title: generateTitle(now), // Titre généré automatiquement
-            is_active: true, // Par défaut actif
-        });
-    }, [formProps.form]);
+        if (queryResult?.data?.data) {
+            const actionData = queryResult.data.data;
+
+            // Gérer l'image
+            if (actionData.image_url) {
+                const imageUrl = actionData.image_url;
+                setImageUrl(imageUrl);
+
+                // Extraire le chemin de l'image pour pouvoir la supprimer plus tard
+                const urlParts = imageUrl.split('/uploads/');
+                if (urlParts.length > 1) {
+                    setCurrentImagePath(`uploads/${urlParts[1]}`);
+                }
+            }
+
+            // Initialiser les valeurs du formulaire avec gestion de la date
+            const formValues = {
+                ...actionData,
+                created_at: actionData.created_at ? new Date(actionData.created_at) : new Date(),
+            };
+
+            formProps.form?.setFieldsValue(formValues);
+        }
+    }, [queryResult?.data?.data, formProps.form]);
+
+    // Fonction pour générer un titre basé sur la date
+    const generateTitle = (date: Date) => {
+        const options: Intl.DateTimeFormatOptions = {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        };
+        return `Activité du ${date.toLocaleDateString('fr-FR', options)}`;
+    };
 
     // Regénérer le titre dès que created_at change
     const createdAt = Form.useWatch(["created_at"], formProps.form);
@@ -36,17 +62,6 @@ export const ActionCreate = () => {
             formProps.form?.setFieldsValue({ title: generateTitle(d) });
         }
     }, [createdAt, formProps.form]);
-
-    // Plus besoin de handleDateChange, le titre est regénéré via useWatch ci-dessus
-
-    // Fonction pour générer un titre basé sur la date
-    const generateTitle = (date: Date) => {
-        const options: Intl.DateTimeFormatOptions = {
-            year: 'numeric',
-            month: 'long'
-        };
-        return date.toLocaleDateString('fr-FR', options).toUpperCase();
-    };
 
     // Fonction pour supprimer l'image uploadée
     const deleteOldImage = async (imagePath: string) => {
@@ -121,7 +136,7 @@ export const ActionCreate = () => {
     };
 
     return (
-        <Create saveButtonProps={saveButtonProps}>
+        <Edit saveButtonProps={saveButtonProps}>
             <Form {...formProps} layout="vertical">
                 <Form.Item
                     label="Date de création"
@@ -182,7 +197,7 @@ export const ActionCreate = () => {
                                 loading={imageUploading}
                                 disabled={imageUploading}
                             >
-                                {imageUploading ? "Téléchargement..." : "Choisir une image"}
+                                {imageUploading ? "Téléchargement..." : "Changer l'image"}
                             </Button>
                         </Upload>
                         {imageUrl && (
@@ -217,19 +232,7 @@ export const ActionCreate = () => {
                         hideToolbar={false}
                     />
                 </Form.Item>
-
-                <Form.Item
-                    label="Statut d'activité"
-                    name={["is_active"]}
-                    valuePropName="checked"
-                    help="Activez pour rendre l'activité visible"
-                >
-                    <Switch
-                        checkedChildren="Active"
-                        unCheckedChildren="Inactive"
-                    />
-                </Form.Item>
             </Form>
-        </Create>
+        </Edit>
     );
 };

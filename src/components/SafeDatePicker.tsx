@@ -12,13 +12,19 @@ export const SafeDatePicker: React.FC<SafeDatePickerProps> = ({
     onChange,
     ...props
 }) => {
-    // Conversion sécurisée de la valeur
-    const safeValue = value ?
-        (typeof value === 'string' ? dayjs(value) : value)
-        : null;
+    // Conversion sécurisée de la valeur: string | Date | Dayjs -> Dayjs | null
+    let tmp: Dayjs | null = null;
+    if (value) {
+        if (typeof value === "string") {
+            tmp = dayjs(value);
+        } else if (dayjs.isDayjs(value)) {
+            tmp = value as Dayjs;
+        } else if (typeof value === 'object' && value !== null && 'getTime' in (value as unknown as { getTime: () => number })) {
+            tmp = dayjs(value as unknown as Date);
+        }
+    }
 
-    // Validation que la date est valide
-    const validValue = safeValue && safeValue.isValid() ? safeValue : null;
+    const validValue = tmp && tmp.isValid() ? tmp : null;
 
     const handleChange = (date: Dayjs | null, dateString: string | string[]) => {
         if (onChange) {

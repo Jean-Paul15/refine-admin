@@ -1,5 +1,5 @@
 import { Show, TextField, DateField } from "@refinedev/antd";
-import { Typography, Space, Image, Card, Divider, Tag } from "antd";
+import { Typography, Space, Image, Card, Divider } from "antd";
 import { useShow } from "@refinedev/core";
 import MDEditor from "@uiw/react-md-editor";
 
@@ -35,12 +35,6 @@ export const ActionShow = () => {
                                     value={record?.updated_at}
                                     format="DD/MM/YYYY à HH:mm"
                                 />
-                            </div>
-                            <div>
-                                <Text strong>Statut : </Text>
-                                <Tag color={record?.is_active ? "green" : "red"}>
-                                    {record?.is_active ? "Active" : "Inactive"}
-                                </Tag>
                             </div>
                         </Space>
                     </Space>
