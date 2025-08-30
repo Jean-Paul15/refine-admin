@@ -1,13 +1,11 @@
 import { Edit, useForm } from "@refinedev/antd";
-import { Form, Input, Upload, Button, message } from "antd";
+import { Form, Input, Upload, Button, message, Switch } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import { useState, useEffect } from "react";
 import { supabaseClient } from "../../utility";
-import SafeDatePicker from "../../components/SafeDatePicker";
 import MDEditor from "@uiw/react-md-editor";
-import dayjs from "dayjs";
 
-export const ActionEdit = () => {
+export const EngagementEdit = () => {
     const { formProps, saveButtonProps, queryResult } = useForm();
     const [imageUrl, setImageUrl] = useState<string>("");
     const [imageUploading, setImageUploading] = useState(false);
@@ -16,11 +14,11 @@ export const ActionEdit = () => {
     // Charger l'image existante et initialiser les valeurs du formulaire
     useEffect(() => {
         if (queryResult?.data?.data) {
-            const actionData = queryResult.data.data;
+            const engagementData = queryResult.data.data;
 
             // Gérer l'image
-            if (actionData.image_url) {
-                const imageUrl = actionData.image_url;
+            if (engagementData.image_url) {
+                const imageUrl = engagementData.image_url;
                 setImageUrl(imageUrl);
 
                 // Extraire le chemin de l'image pour pouvoir la supprimer plus tard
@@ -30,38 +28,10 @@ export const ActionEdit = () => {
                 }
             }
 
-            // Initialiser les valeurs du formulaire avec gestion de la date
-            const formValues = {
-                ...actionData,
-                created_at: actionData.created_at ? new Date(actionData.created_at) : new Date(),
-            };
-
-            formProps.form?.setFieldsValue(formValues);
+            // Initialiser les valeurs du formulaire
+            formProps.form?.setFieldsValue(engagementData);
         }
     }, [queryResult?.data?.data, formProps.form]);
-
-    // Fonction pour générer un titre basé sur la date
-    const generateTitle = (date: Date) => {
-        const options: Intl.DateTimeFormatOptions = {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        };
-        return `Activité du ${date.toLocaleDateString('fr-FR', options)}`;
-    };
-
-    // Regénérer le titre dès que created_at change
-    const createdAt = Form.useWatch(["created_at"], formProps.form);
-    useEffect(() => {
-        if (!createdAt) return;
-        let d: Date | null = null;
-        if (dayjs.isDayjs(createdAt)) d = createdAt.toDate();
-        else if (createdAt instanceof Date) d = createdAt;
-        else if (typeof createdAt === "string") d = new Date(createdAt);
-        if (d && !isNaN(d.getTime())) {
-            formProps.form?.setFieldsValue({ title: generateTitle(d) });
-        }
-    }, [createdAt, formProps.form]);
 
     // Fonction pour supprimer l'image uploadée
     const deleteOldImage = async (imagePath: string) => {
@@ -93,7 +63,7 @@ export const ActionEdit = () => {
             // Générer un nom de fichier unique
             const fileExt = file.name.split('.').pop();
             const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-            const filePath = `uploads/actions/${fileName}`;
+            const filePath = `uploads/engagements/${fileName}`;
 
             // Upload vers Supabase Storage
             const { error } = await supabaseClient.storage
@@ -139,26 +109,7 @@ export const ActionEdit = () => {
         <Edit saveButtonProps={saveButtonProps}>
             <Form {...formProps} layout="vertical">
                 <Form.Item
-                    label="Date de création"
-                    name={["created_at"]}
-                    rules={[
-                        {
-                            required: true,
-                            message: "La date de création est obligatoire",
-                        },
-                    ]}
-                    help="Le titre sera généré automatiquement en fonction de cette date"
-                >
-                    <SafeDatePicker
-                        showTime
-                        format="YYYY-MM-DD HH:mm:ss"
-                        placeholder="Sélectionnez une date"
-                        style={{ width: "100%" }}
-                    />
-                </Form.Item>
-
-                <Form.Item
-                    label="Titre de l'activité"
+                    label="Titre de l'engagement"
                     name={["title"]}
                     rules={[
                         {
@@ -166,15 +117,39 @@ export const ActionEdit = () => {
                             message: "Le titre est obligatoire",
                         },
                     ]}
-                    help="Généré automatiquement à partir de la date, mais vous pouvez le modifier"
                 >
-                    <Input placeholder="Titre de l'activité" />
+                    <Input placeholder="Titre de l'engagement" />
                 </Form.Item>
 
                 <Form.Item
-                    label="Image de l'activité"
+                    label="Description"
+                    name={["description"]}
+                    rules={[
+                        {
+                            required: true,
+                            message: "La description est obligatoire",
+                        },
+                    ]}
+                    help="Décrivez en détail cet engagement"
+                >
+                    <MDEditor
+                        data-color-mode="light"
+                        preview="edit"
+                        hideToolbar={false}
+                        visibleDragbar={false}
+                    />
+                </Form.Item>
+
+                <Form.Item
+                    label="Image de l'engagement"
                     name={["image_url"]}
-                    help="Téléchargez une image pour illustrer votre activité (optionnel)"
+                    rules={[
+                        {
+                            required: true,
+                            message: "Une image est obligatoire",
+                        },
+                    ]}
+                    help="Téléchargez une image pour illustrer cet engagement"
                 >
                     <div>
                         <Upload
@@ -192,29 +167,31 @@ export const ActionEdit = () => {
                             }}
                             onRemove={removeCurrentImage}
                         >
-                            <Button
-                                icon={<UploadOutlined />}
-                                loading={imageUploading}
-                                disabled={imageUploading}
-                            >
-                                {imageUploading ? "Téléchargement..." : "Changer l'image"}
+                            <Button icon={<UploadOutlined />} loading={imageUploading}>
+                                {imageUploading ? 'Téléchargement...' : 'Sélectionner une image'}
                             </Button>
                         </Upload>
+
                         {imageUrl && (
-                            <div style={{ marginTop: "8px" }}>
+                            <div style={{ marginTop: 10 }}>
                                 <img
                                     src={imageUrl}
                                     alt="Aperçu"
-                                    style={{ maxWidth: "200px", maxHeight: "200px", objectFit: "cover" }}
+                                    style={{
+                                        maxWidth: 200,
+                                        maxHeight: 150,
+                                        objectFit: 'cover',
+                                        borderRadius: 4
+                                    }}
                                 />
                                 <br />
                                 <Button
-                                    size="small"
+                                    type="link"
                                     danger
-                                    style={{ marginTop: "8px" }}
                                     onClick={removeCurrentImage}
+                                    style={{ padding: 0, marginTop: 5 }}
                                 >
-                                    Supprimer l'image
+                                    Supprimer cette image
                                 </Button>
                             </div>
                         )}
@@ -222,14 +199,25 @@ export const ActionEdit = () => {
                 </Form.Item>
 
                 <Form.Item
-                    label="Contenu de l'activité"
-                    name={["full_content"]}
-                    help="Décrivez l'activité en détail"
+                    label="Statut d'activation"
+                    name={["is_active"]}
+                    valuePropName="checked"
+                    help="Activez pour rendre cet engagement visible sur le site"
                 >
-                    <MDEditor
-                        data-color-mode="light"
-                        preview="edit"
-                        hideToolbar={false}
+                    <Switch
+                        checkedChildren="Actif"
+                        unCheckedChildren="Inactif"
+                    />
+                </Form.Item>
+
+                <Form.Item
+                    label="Ordre d'affichage"
+                    help="L'ordre est calculé automatiquement en fonction de la date de création. Plus ancien = ordre plus petit = affiché en premier."
+                >
+                    <Input
+                        value={queryResult?.data?.data?.ordre || 'Calculé automatiquement'}
+                        disabled
+                        style={{ backgroundColor: '#f5f5f5' }}
                     />
                 </Form.Item>
             </Form>

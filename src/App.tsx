@@ -8,6 +8,7 @@ import {
   SettingOutlined,
   DashboardOutlined,
   HeartOutlined,
+  TeamOutlined,
 } from "@ant-design/icons";
 
 import {
@@ -69,6 +70,12 @@ import {
   DonsEngagementsList,
   DonsEngagementsShow,
 } from "./pages/dons-engagements";
+import {
+  EngagementCreate,
+  EngagementEdit,
+  EngagementList,
+  EngagementShow,
+} from "./pages/engagements";
 import { supabaseClient } from "./utility";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { useErrorHandler } from "./hooks/useErrorHandler";
@@ -159,6 +166,18 @@ function App() {
                     },
                   },
                   {
+                    name: "engagements",
+                    list: "/engagements",
+                    create: "/engagements/create",
+                    edit: "/engagements/edit/:id",
+                    show: "/engagements/show/:id",
+                    meta: {
+                      label: "Engagements",
+                      icon: <TeamOutlined />,
+                      canDelete: true,
+                    },
+                  },
+                  {
                     name: "formulaire_contact",
                     list: "/dons-engagements",
                     create: "/dons-engagements/create",
@@ -227,6 +246,12 @@ function App() {
                       <Route path="create" element={<SettingCreate />} />
                       <Route path="edit/:id" element={<SettingEdit />} />
                       <Route path="show/:id" element={<SettingShow />} />
+                    </Route>
+                    <Route path="/engagements">
+                      <Route index element={<EngagementList />} />
+                      <Route path="create" element={<EngagementCreate />} />
+                      <Route path="edit/:id" element={<EngagementEdit />} />
+                      <Route path="show/:id" element={<EngagementShow />} />
                     </Route>
                     <Route path="/dons-engagements">
                       <Route index element={<DonsEngagementsList />} />

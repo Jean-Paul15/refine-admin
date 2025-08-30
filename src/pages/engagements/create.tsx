@@ -1,44 +1,22 @@
 import { Create, useForm } from "@refinedev/antd";
-import { Form, Input, Upload, Button, message } from "antd";
+import { Form, Input, Upload, Button, message, Switch } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import { useState, useEffect } from "react";
 import { supabaseClient } from "../../utility";
-import SafeDatePicker from "../../components/SafeDatePicker";
 import MDEditor from "@uiw/react-md-editor";
-import type { Dayjs } from "dayjs";
 
-export const ActionCreate = () => {
+export const EngagementCreate = () => {
     const { formProps, saveButtonProps } = useForm();
     const [imageUrl, setImageUrl] = useState<string>("");
     const [imageUploading, setImageUploading] = useState(false);
     const [currentImagePath, setCurrentImagePath] = useState<string>("");
 
-    // Initialiser la date de création par défaut
+    // Initialiser les valeurs par défaut
     useEffect(() => {
-        const now = new Date();
         formProps.form?.setFieldsValue({
-            created_at: now,
-            title: generateTitle(now), // Titre généré automatiquement
+            is_active: true, // Par défaut actif
         });
     }, [formProps.form]);
-
-    // Fonction pour générer un titre basé sur la date
-    const generateTitle = (date: Date) => {
-        const options: Intl.DateTimeFormatOptions = {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        };
-        return `Activité du ${date.toLocaleDateString('fr-FR', options)}`;
-    };
-
-    // Fonction pour gérer le changement de date
-    const handleDateChange = (date: Dayjs | null) => {
-        if (date) {
-            const title = generateTitle(date.toDate());
-            formProps.form?.setFieldsValue({ title });
-        }
-    };
 
     // Fonction pour supprimer l'image uploadée
     const deleteOldImage = async (imagePath: string) => {
@@ -70,7 +48,7 @@ export const ActionCreate = () => {
             // Générer un nom de fichier unique
             const fileExt = file.name.split('.').pop();
             const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-            const filePath = `uploads/actions/${fileName}`;
+            const filePath = `uploads/engagements/${fileName}`;
 
             // Upload vers Supabase Storage
             const { error } = await supabaseClient.storage
@@ -116,27 +94,7 @@ export const ActionCreate = () => {
         <Create saveButtonProps={saveButtonProps}>
             <Form {...formProps} layout="vertical">
                 <Form.Item
-                    label="Date de création"
-                    name={["created_at"]}
-                    rules={[
-                        {
-                            required: true,
-                            message: "La date de création est obligatoire",
-                        },
-                    ]}
-                    help="Le titre sera généré automatiquement en fonction de cette date"
-                >
-                    <SafeDatePicker
-                        showTime
-                        format="YYYY-MM-DD HH:mm:ss"
-                        placeholder="Sélectionnez une date"
-                        style={{ width: "100%" }}
-                        onChange={handleDateChange}
-                    />
-                </Form.Item>
-
-                <Form.Item
-                    label="Titre de l'activité"
+                    label="Titre de l'engagement"
                     name={["title"]}
                     rules={[
                         {
@@ -144,15 +102,39 @@ export const ActionCreate = () => {
                             message: "Le titre est obligatoire",
                         },
                     ]}
-                    help="Généré automatiquement à partir de la date, mais vous pouvez le modifier"
                 >
-                    <Input placeholder="Titre de l'activité" />
+                    <Input placeholder="Titre de l'engagement" />
                 </Form.Item>
 
                 <Form.Item
-                    label="Image de l'activité"
+                    label="Description"
+                    name={["description"]}
+                    rules={[
+                        {
+                            required: true,
+                            message: "La description est obligatoire",
+                        },
+                    ]}
+                    help="Décrivez en détail cet engagement"
+                >
+                    <MDEditor
+                        data-color-mode="light"
+                        preview="edit"
+                        hideToolbar={false}
+                        visibleDragbar={false}
+                    />
+                </Form.Item>
+
+                <Form.Item
+                    label="Image de l'engagement"
                     name={["image_url"]}
-                    help="Téléchargez une image pour illustrer votre activité (optionnel)"
+                    rules={[
+                        {
+                            required: true,
+                            message: "Une image est obligatoire",
+                        },
+                    ]}
+                    help="Téléchargez une image pour illustrer cet engagement"
                 >
                     <div>
                         <Upload
@@ -170,29 +152,31 @@ export const ActionCreate = () => {
                             }}
                             onRemove={removeCurrentImage}
                         >
-                            <Button
-                                icon={<UploadOutlined />}
-                                loading={imageUploading}
-                                disabled={imageUploading}
-                            >
-                                {imageUploading ? "Téléchargement..." : "Choisir une image"}
+                            <Button icon={<UploadOutlined />} loading={imageUploading}>
+                                {imageUploading ? 'Téléchargement...' : 'Sélectionner une image'}
                             </Button>
                         </Upload>
+
                         {imageUrl && (
-                            <div style={{ marginTop: "8px" }}>
+                            <div style={{ marginTop: 10 }}>
                                 <img
                                     src={imageUrl}
                                     alt="Aperçu"
-                                    style={{ maxWidth: "200px", maxHeight: "200px", objectFit: "cover" }}
+                                    style={{
+                                        maxWidth: 200,
+                                        maxHeight: 150,
+                                        objectFit: 'cover',
+                                        borderRadius: 4
+                                    }}
                                 />
                                 <br />
                                 <Button
-                                    size="small"
+                                    type="link"
                                     danger
-                                    style={{ marginTop: "8px" }}
                                     onClick={removeCurrentImage}
+                                    style={{ padding: 0, marginTop: 5 }}
                                 >
-                                    Supprimer l'image
+                                    Supprimer cette image
                                 </Button>
                             </div>
                         )}
@@ -200,14 +184,14 @@ export const ActionCreate = () => {
                 </Form.Item>
 
                 <Form.Item
-                    label="Contenu de l'activité"
-                    name={["full_content"]}
-                    help="Décrivez l'activité en détail"
+                    label="Statut d'activation"
+                    name={["is_active"]}
+                    valuePropName="checked"
+                    help="Activez pour rendre cet engagement visible sur le site"
                 >
-                    <MDEditor
-                        data-color-mode="light"
-                        preview="edit"
-                        hideToolbar={false}
+                    <Switch
+                        checkedChildren="Actif"
+                        unCheckedChildren="Inactif"
                     />
                 </Form.Item>
             </Form>
